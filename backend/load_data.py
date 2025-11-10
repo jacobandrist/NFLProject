@@ -1,6 +1,16 @@
 import nfl_data_py as nfl
 import pandas as pd
 import sqlite3
+import ssl
+import urllib.request
+import certifi
+
+import ssl, urllib.request, certifi
+ctx = ssl.create_default_context(cafile=certifi.where())
+urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx)))
+
+
+
 
 DB_PATH = "nfl.db"
 YEARS = [2022, 2023, 2024]
@@ -9,7 +19,6 @@ def load_rosters(conn):
     print("Loading rosters...")
     # Grab full dataset
     rosters = nfl.import_seasonal_rosters(YEARS)
-    # print(f"Available roster columns: {list(rosters.columns)}")
 
     # Figure out which team column exists
     if "recent_team" in rosters.columns:
