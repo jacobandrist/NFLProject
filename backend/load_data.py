@@ -7,11 +7,8 @@ YEARS = [2022, 2023, 2024]
 
 def load_rosters(conn):
     print("Loading rosters...")
-    # Grab full dataset
     rosters = nfl.import_seasonal_rosters(YEARS)
-    # print(f"Available roster columns: {list(rosters.columns)}")
 
-    # Figure out which team column exists
     if "recent_team" in rosters.columns:
         team_col = "recent_team"
     elif "team" in rosters.columns:
@@ -19,16 +16,13 @@ def load_rosters(conn):
     else:
         team_col = None
 
-    # Base columns we care about
     keep_cols = ["player_id", "player_name", "position"]
     if team_col:
         keep_cols.append(team_col)
 
-    # Filter and de-dupe players
     keep_cols = [c for c in keep_cols if c in rosters.columns]
     rosters = rosters[keep_cols].drop_duplicates(subset=["player_id"])
 
-    # Save to DB
     rosters.to_sql("players", conn, if_exists="replace", index=False)
     print(f"Inserted {len(rosters)} players")
 
@@ -37,7 +31,6 @@ def load_rosters(conn):
 def load_weekly_stats(conn):
     print("Loading weekly stats...")
     weekly = nfl.import_weekly_data(YEARS, downcast=True)
-    # print(f"Available columns: {list(weekly.columns)}")
 
     keep_cols = [c for c in [
         "player_id", "player_name", "recent_team", "season", "week",
