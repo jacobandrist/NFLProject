@@ -3,62 +3,64 @@ import pandas as pd
 import sqlite3
 
 DB_PATH = "nfl.db"
-
-YEARS = [2022,2023,2024]
+YEARS = [2022, 2023, 2024]
 
 def load_rosters(conn):
-    roster_cols = ["players_id", "player_name", "recent_team", "position"]
     print("Loading rosters...")
-    rosters = nfl.import_seasonal_rosters(YEARS, columns=roster_cols)
+    # Grab full dataset
+    rosters = nfl.import_seasonal_rosters(YEARS)
+    # print(f"Available roster columns: {list(rosters.columns)}")
 
-    rosters = rosters.drop_duplicates(subset=["player_id"])
+    # Figure out which team column exists
+    if "recent_team" in rosters.columns:
+        team_col = "recent_team"
+    elif "team" in rosters.columns:
+        team_col = "team"
+    else:
+        team_col = None
 
-    rosters.to_sql("players", conn, if_exists="replace", index= False)
+    # Base columns we care about
+    keep_cols = ["player_id", "player_name", "position"]
+    if team_col:
+        keep_cols.append(team_col)
+
+    # Filter and de-dupe players
+    keep_cols = [c for c in keep_cols if c in rosters.columns]
+    rosters = rosters[keep_cols].drop_duplicates(subset=["player_id"])
+
+    # Save to DB
+    rosters.to_sql("players", conn, if_exists="replace", index=False)
     print(f"Inserted {len(rosters)} players")
 
+
+
 def load_weekly_stats(conn):
-    weekly_cols = [
-        "player_id",
-        "player_name",
-        "recent_team",
-        "season",
-        "week",
-        "passing_yards",
-        "rushing_yards",
-        "receiving_yards",
-        "passing_tds",
-        "rushing_tds",
-        "receiving_tds",
-        "fantasy_points_ppr",
-    ]
-
     print("Loading weekly stats...")
-    weekly = nfl.import_weekly_data(YEARS, columns=weekly_cols, downcast=True)
+    weekly = nfl.import_weekly_data(YEARS, downcast=True)
+    # print(f"Available columns: {list(weekly.columns)}")
 
-    weekly = weekly.dropna(
-        subset=[
-            "passing_yards",
-            "rushing_yards",
-            "receiving_yards",
-            "fantasty_points_ppr"
-        ],
-        how="all",
-    )
+    keep_cols = [c for c in [
+        "player_id", "player_name", "recent_team", "season", "week",
+        "passing_yards", "rushing_yards", "receiving_yards",
+        "passing_tds", "rushing_tds", "receiving_tds", "fantasy_points_ppr"
+    ] if c in weekly.columns]
 
-    weekly.to_sql("weekly stats", conn, if_exists="replace", index=False)
+    weekly = weekly[keep_cols]
+
+    # Save to database
+    weekly.to_sql("weekly_stats", conn, if_exists="replace", index=False)
     print(f"Inserted {len(weekly)} weekly stat rows")
 
+
 def create_indexes(conn):
-    cur = conn.cursor()
-
     print("Creating indexes...")
+    cur = conn.cursor()
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_players_id ON players(player_id);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_players_name ON players(player_name);")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_players_team_pos ON players(recent_team, position);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_weekly_player ON weekly_stats(player_id);")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_weekly_season_week ON weekly_stats(season, week);")
-
     conn.commit()
     print("Indexes created.")
+
 
 def main():
     conn = sqlite3.connect(DB_PATH)
@@ -68,6 +70,7 @@ def main():
         create_indexes(conn)
     finally:
         conn.close()
+
 
 if __name__ == "__main__":
     main()
