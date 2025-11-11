@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from typing import Optional
 import sqlite3
 from fastapi.middleware.cors import CORSMiddleware
+import nflreadpy as nfl
 
 
 DB_PATH = "nfl.db"
@@ -53,6 +54,63 @@ TEAM_COL_WEEKLY = (
 def root():
     return {"status": "ok", "message": "NFL API running"}
 
+
+@app.get("/leaders")
+def get_leaders(limit: int = 10, position: Optional[str] = None):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    SEASON = 2025 
+
+    if TEAM_COL_WEEKLY:
+        team_expr = f"ws.{TEAM_COL_WEEKLY}"
+    else:
+        team_expr = "NULL"
+
+    sql = f"""
+        SELECT
+            ws.player_id,
+            p.player_name AS player_name,
+            {team_expr} AS team,
+            p.position,
+            COUNT(*) AS games_played,
+            SUM(ws.fantasy_points_ppr) AS total_fantasy_points_ppr,
+            AVG(ws.fantasy_points_ppr) AS avg_fantasy_points_ppr
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+    """
+
+    params = [SEASON]
+
+    if position:
+        sql += " AND p.position = ?"
+        params.append(position.upper())
+
+    sql += f"""
+        GROUP BY
+            ws.player_id,
+            p.player_name,
+            {team_expr},
+            p.position
+        ORDER BY total_fantasy_points_ppr DESC
+        LIMIT ?
+    """
+    params.append(limit)
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+
+    result = [dict(r) for r in rows]
+    for r in result:
+        for key in ("total_fantasy_points_ppr", "avg_fantasy_points_ppr"):
+            if key in r and r[key] is not None:
+                r[key] = round(r[key], 2)
+
+    return result
 
 @app.get("/players")
 def search_players(
