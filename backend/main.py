@@ -1,10 +1,22 @@
 from fastapi import FastAPI, HTTPException
 from typing import Optional
 import sqlite3
+from fastapi.middleware.cors import CORSMiddleware
+import nflreadpy as nfl
+
 
 DB_PATH = "nfl.db"
 
 app = FastAPI(title="NFL Last 5 Games API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000",
+                   "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 def get_db():
@@ -22,7 +34,6 @@ def get_table_columns(table_name: str):
     return cols
 
 
-# Detect actual team column names once at startup
 PLAYERS_COLS = get_table_columns("players")
 WEEKLY_COLS = get_table_columns("weekly_stats")
 
@@ -42,6 +53,174 @@ TEAM_COL_WEEKLY = (
 def root():
     return {"status": "ok", "message": "NFL API running"}
 
+@app.get("/team/{team}")
+def get_team(team: str):
+    conn = get_db()
+    cur = conn.cursor()
+
+    SEASON = 2025
+
+    if not TEAM_COL_WEEKLY:
+        conn.close()
+        raise HTTPException(status_code=500, detail="Team column not availabe in weekly stats")
+    
+    team_col = f"ws.{TEAM_COL_WEEKLY}"
+    team = team.upper()
+
+    base_stats= [
+        "passing_yards",
+        "rushing_yards",
+        "receiving_yards",
+        "passing_tds",
+        "rushing_tds",
+        "receiving_tds",
+        "fantasy_points_ppr",
+    ]
+    stat_cols = [c for c in base_stats if c in WEEKLY_COLS]
+
+    if not stat_cols:
+        conn.close()
+        raise HTTPException(status_code=500, detail="No stat columns available in weekly_stats")
+    
+    team_select_parts = [f"SUM(ws.{c}) AS {c}" for c in stat_cols]
+    team_select_clause = ",\n          ".join(team_select_parts)
+
+    sql_team = f"""
+        SELECT
+            {team_select_clause}
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+            AND {team_col} = ?
+    """
+
+    cur.execute(sql_team, (SEASON, team))
+    team_row = cur.fetchone()
+
+    if not team_row or all(v is None for v in team_row):
+        conn.close()
+        raise HTTPException(status_code=404, detail="No data found for team {team} in {SEASON}")
+    
+    team_totals = {k: team_row[idx] for idx, k in enumerate(stat_cols)}
+
+    pos_select_parts = ["p.position", "COUNT(DISTINCT ws.player_id) AS players"]
+    pos_select_parts.extend([f"SUM(ws.{c}) AS {c}" for c in stat_cols])
+    pos_select_clause = ",\n            ".join(pos_select_parts)
+
+    sql_pos = f"""
+        SELECT
+            {pos_select_clause}
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+          AND {team_col} = ?
+        GROUP BY p.position
+        ORDER BY p.position
+    """
+
+    cur.execute(sql_pos, (SEASON, team))
+    pos_rows = cur.fetchall()
+    by_position = []
+    for row in pos_rows:
+        d = dict(row)
+        by_position.append(d)
+
+    plyr_select_parts = [
+        "ws.player_id",
+        "p.player_name AS player_name",
+        "p.position",
+    ]
+    plyr_select_parts.extend([f"SUM(ws.{c}) AS {c}" for c in stat_cols])
+    plyr_select_clause = ",\n            ".join(plyr_select_parts)
+
+    sql_player = f"""
+        SELECT
+            {plyr_select_clause}
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+          AND {team_col} = ?
+        GROUP BY ws.player_id, p.player_name, p.position
+        ORDER BY fantasy_points_ppr DESC
+    """
+
+    cur.execute(sql_player, (SEASON, team))
+    plyr_rows = cur.fetchall()
+    by_player = [dict(r) for r in plyr_rows]
+
+    conn.close()
+
+    for d in [team_totals, *by_position, *by_player]:
+        if "fantasy_points_ppr" in d and d["fantasy_points_ppr"] is not None:
+            d["fantasy_points_ppr"] = round(d["fantasy_points_ppr"], 2)
+
+    return {
+        "team": team,
+        "season": SEASON,
+        "team_totals": team_totals,
+        "by_position": by_position,
+        "by_player": by_player,
+    }
+
+@app.get("/leaders")
+def get_leaders(limit: int = 10, position: Optional[str] = None):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    SEASON = 2025 
+
+    if TEAM_COL_WEEKLY:
+        team_expr = f"ws.{TEAM_COL_WEEKLY}"
+    else:
+        team_expr = "NULL"
+
+    sql = f"""
+        SELECT
+            ws.player_id,
+            p.player_name AS player_name,
+            {team_expr} AS team,
+            p.position,
+            COUNT(*) AS games_played,
+            SUM(ws.fantasy_points_ppr) AS total_fantasy_points_ppr,
+            AVG(ws.fantasy_points_ppr) AS avg_fantasy_points_ppr
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+    """
+
+    params = [SEASON]
+
+    if position:
+        sql += " AND p.position = ?"
+        params.append(position.upper())
+
+    sql += f"""
+        GROUP BY
+            ws.player_id,
+            p.player_name,
+            {team_expr},
+            p.position
+        ORDER BY total_fantasy_points_ppr DESC
+        LIMIT ?
+    """
+    params.append(limit)
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+
+    result = [dict(r) for r in rows]
+    for r in result:
+        for key in ("total_fantasy_points_ppr", "avg_fantasy_points_ppr"):
+            if key in r and r[key] is not None:
+                r[key] = round(r[key], 2)
+
+    return result
 
 @app.get("/players")
 def search_players(
@@ -99,7 +278,6 @@ def search_players(
 
     return [dict(r) for r in rows]
 
-
 @app.get("/players/{player_id}")
 def get_player(player_id: str):
     """
@@ -131,7 +309,6 @@ def get_player(player_id: str):
         raise HTTPException(status_code=404, detail="Player not found")
 
     return dict(row)
-
 
 @app.get("/players/{player_id}/games")
 def get_last_games(player_id: str, limit: int = 5):

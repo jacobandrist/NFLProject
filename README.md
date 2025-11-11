@@ -30,7 +30,7 @@ backend/
 ## 🧠 About `nflreadpy`
 
 [`nflreadpy`](https://pypi.org/project/nflreadpy/) is a Python package for downloading structured NFL data directly from the **nflverse** repositories.  
-It replaces `nfl_data_py` and offers:
+It offers:
 - Fast data loading via [Polars](https://www.pola.rs/)
 - Automatic caching (memory or filesystem)
 - Consistent API with the R package [`nflreadr`](https://nflreadr.nflverse.com)
