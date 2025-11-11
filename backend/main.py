@@ -26,8 +26,16 @@ def get_table_columns(table_name: str):
 PLAYERS_COLS = get_table_columns("players")
 WEEKLY_COLS = get_table_columns("weekly_stats")
 
-TEAM_COL_PLAYERS = "recent_team" if "recent_team" in PLAYERS_COLS else ("team" if "team" in PLAYERS_COLS else None)
-TEAM_COL_WEEKLY = "recent_team" if "recent_team" in WEEKLY_COLS else ("team" if "team" in WEEKLY_COLS else None)
+TEAM_COL_PLAYERS = (
+    "recent_team"
+    if "recent_team" in PLAYERS_COLS
+    else ("team" if "team" in PLAYERS_COLS else None)
+)
+TEAM_COL_WEEKLY = (
+    "recent_team"
+    if "recent_team" in WEEKLY_COLS
+    else ("team" if "team" in WEEKLY_COLS else None)
+)
 
 
 @app.get("/")
