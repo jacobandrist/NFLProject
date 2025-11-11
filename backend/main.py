@@ -34,7 +34,6 @@ def get_table_columns(table_name: str):
     return cols
 
 
-# Detect actual team column names once at startup
 PLAYERS_COLS = get_table_columns("players")
 WEEKLY_COLS = get_table_columns("weekly_stats")
 
@@ -128,7 +127,6 @@ def get_team(team: str):
         d = dict(row)
         by_position.append(d)
 
-    # ---------- BY PLAYER ----------
     plyr_select_parts = [
         "ws.player_id",
         "p.player_name AS player_name",
@@ -155,7 +153,6 @@ def get_team(team: str):
 
     conn.close()
 
-    # Optional: round fantasy points to 2 decimals
     for d in [team_totals, *by_position, *by_player]:
         if "fantasy_points_ppr" in d and d["fantasy_points_ppr"] is not None:
             d["fantasy_points_ppr"] = round(d["fantasy_points_ppr"], 2)
@@ -167,8 +164,6 @@ def get_team(team: str):
         "by_position": by_position,
         "by_player": by_player,
     }
-
-
 
 @app.get("/leaders")
 def get_leaders(limit: int = 10, position: Optional[str] = None):
@@ -283,7 +278,6 @@ def search_players(
 
     return [dict(r) for r in rows]
 
-
 @app.get("/players/{player_id}")
 def get_player(player_id: str):
     """
@@ -315,7 +309,6 @@ def get_player(player_id: str):
         raise HTTPException(status_code=404, detail="Player not found")
 
     return dict(row)
-
 
 @app.get("/players/{player_id}/games")
 def get_last_games(player_id: str, limit: int = 5):
