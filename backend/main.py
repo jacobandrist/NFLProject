@@ -221,7 +221,6 @@ def get_team(team: str):
     }
 
 
-
 @app.get("/schedules")
 def get_schedules(
     season: int = 2025,
