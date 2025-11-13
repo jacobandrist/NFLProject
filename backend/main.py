@@ -221,6 +221,7 @@ def get_team(team: str):
     }
 
 
+
 @app.get("/schedules")
 def get_schedules(
     season: int = 2025,
@@ -228,7 +229,7 @@ def get_schedules(
     week: Optional[int] = None,
     game_type: Optional[str] = None,
 ):
-
+    
     try:
         sched_df = nfl.load_schedules([season])
     except Exception as e:
