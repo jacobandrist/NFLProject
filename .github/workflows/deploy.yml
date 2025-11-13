@@ -23,7 +23,7 @@ jobs:
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r req.txt
 
       # Optional backend tests
       - name: Run backend tests
@@ -64,7 +64,7 @@ jobs:
 
             # ---- Backend Deploy ----
             cd backend
-            /root/opt/nfl-app/NFLProject/backend/venv/bin/pip install -r requirements.txt
+            /root/opt/nfl-app/NFLProject/backend/venv/bin/pip install -r req.txt
             sudo systemctl restart nfl-api
 
             # ---- Frontend Deploy ----
