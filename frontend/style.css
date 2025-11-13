@@ -142,7 +142,7 @@
     break-inside: avoid;
     margin-bottom:18px;
     position:relative;
-    opacity:0;
+    opacity:1;
     transform: translateY(18px) scale(.995);
     transition:opacity .6s cubic-bezier(.2,.9,.2,1), transform .6s cubic-bezier(.2,.9,.2,1);
     will-change:opacity, transform;
@@ -209,6 +209,26 @@
     padding:28px 10px 60px;
     font-size:0.92rem;
   }
+
+  .card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    margin-left: 100px;
+    margin-right: 100px;
+    margin-bottom: 20px;
+    padding-left: 10px;
+  }
+
+  .card-title{
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+
+
 
   .stagger-1{ transition-delay: 0.06s; }
   .stagger-2{ transition-delay: 0.12s; }
