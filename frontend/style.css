@@ -149,6 +149,13 @@
     cursor: zoom-in;
   }
 
+  .masonry-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+
   .masonry-item.visible{
     opacity:1;
     transform: translateY(0) scale(1);
