@@ -1,0 +1,80 @@
+name: Deploy NFL Project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------- Backend CI ----------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Optional backend tests
+      - name: Run backend tests
+        if: false
+        working-directory: backend
+        run: |
+          pytest
+
+      # ---------------- Frontend CI ----------------
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # ---------------- Deploy to VM ----------------
+      - name: Deploy to DigitalOcean VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+
+            # Go to project directory on VM
+            cd /root/opt/nfl-app/NFLProject
+
+            # Pull latest code
+            git pull
+
+            # ---- Backend Deploy ----
+            cd backend
+            /root/opt/nfl-app/NFLProject/backend/venv/bin/pip install -r requirements.txt
+            sudo systemctl restart nfl-api
+
+            # ---- Frontend Deploy ----
+            cd ../frontend
+            npm ci
+            npm run build
+
+            # Copy frontend to nginx directory
+            sudo rm -rf /var/www/nfl-frontend/*
+            sudo cp -r dist/* /var/www/nfl-frontend/
+
+            # Reload nginx to serve the new build
+            sudo systemctl reload nginx
