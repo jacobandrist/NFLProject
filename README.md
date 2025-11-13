@@ -50,7 +50,7 @@ player_stats = nfl.load_player_stats([2024, 2025])
 # Convert to pandas for easier manipulation
 df = player_stats.to_pandas()
 ```
-⚙️ Setup Instructions
+## ⚙️ Setup Instructions
 1️⃣ Clone the Repository
 git clone https://github.com/yourusername/nfl-stats-api.git
 cd nfl-stats-api/backend
@@ -59,26 +59,30 @@ python3 -m venv venv
 source venv/bin/activate
 3️⃣ Install Dependencies
 pip install -r requirements.txt
-🧩 Key dependencies:
+
+## 🧩 Key dependencies:
 fastapi
 uvicorn
 nflreadpy
 pandas
 pyarrow
-🏗 Load the Data
+
+## 🏗 Load the Data
 Before running the API, load the latest NFL data into the local database:
 python load_data.py
 This script:
 Pulls current-season rosters and weekly player stats via nflreadpy
 Normalizes data for use with the API
 Saves everything into nfl.db
-🚀 Run the Server
+
+## 🚀 Run the Server
 Start your local FastAPI instance:
 uvicorn main:app --reload
 Then open:
 Interactive API Docs → http://127.0.0.1:8000/docs
 Health Check → http://127.0.0.1:8000
-🔗 API Endpoints
+
+## 🔗 API Endpoints
 GET /
 Health check.
 Response:
@@ -134,11 +138,13 @@ Response:
     "avg_fantasy_points_ppr": 22.5
   }
 }
-🔁 Updating Data
+
+## 🔁 Updating Data
 To refresh data for the newest games:
 python load_data.py
 You can automate this with a cron job, GitHub Actions workflow, or a scheduled task.
-🧩 Configuration Notes
+
+## 🧩 Configuration Notes
 The data loader (load_data.py) uses:
 from nflreadpy.config import update_config
 
@@ -149,18 +155,21 @@ update_config(
     verbose=True,
 )
 This enables local caching so repeated runs don’t re-download the same data.
-📅 Current Season Only
+
+## 📅 Current Season Only
 The script automatically detects the current NFL season:
 CURRENT_SEASON = nfl.get_current_season()
 YEARS = [CURRENT_SEASON]
 You can change this if you want to include multiple seasons.
-🧰 Requirements
+
+## 🧰 Requirements
 See requirements.txt, or install manually:
 pip install fastapi uvicorn nflreadpy pandas pyarrow
-🪪 License
+## 🪪 License
 This project is licensed under the MIT License.
 Data sourced via nflverse and nflreadpy, which are licensed under CC-BY 4.0 and MIT respectively.
-🙌 Credits
+
+## 🙌 Credits
 nflverse team — for maintaining open NFL data sources
 nflreadpy maintainers — for the Python port
 Built by Jacob Andrist and Grant Messer
