@@ -49,6 +49,7 @@ player_stats = nfl.load_player_stats([2024, 2025])
 
 # Convert to pandas for easier manipulation
 df = player_stats.to_pandas()
+```
 ⚙️ Setup Instructions
 1️⃣ Clone the Repository
 git clone https://github.com/yourusername/nfl-stats-api.git
