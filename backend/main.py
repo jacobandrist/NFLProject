@@ -244,7 +244,7 @@ def get_team(team: str):
         "by_player": by_player,
     }
 
-@app.get("/rosters/")
+@app.get("/rosters")
 def get_team_roster(
     season: int = 2025,
     team: Optional[str] = None):
