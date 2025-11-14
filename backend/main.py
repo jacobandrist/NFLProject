@@ -68,6 +68,30 @@ except Exception as e:
     print(f"Error loading team metadata from nflreadpy: {e}")
     _teams_meta = None
 
+try:
+    players_polars = nfl.load_players()
+    players_df = players_polars.to_pandas()
+
+    if "gsis_id" in players_df.columns:
+        _players_meta = players_df.set_index("gsis_id")
+    elif "player_id" in players_df.columns:
+        _players_meta = players_df.set_index("player_id")
+    else:
+        _players_meta = None
+
+    if "headshot" in players_df.columns:
+        HEADSHOT_COL = "headshot"
+    elif "headshot_url" in players_df.columns:
+        HEADSHOT_COL = "headshot_url"
+    else:
+        HEADSHOT_COL = None
+
+except Exception as e:
+    print(f"Error loading player metadata from nflreadpy: {e}")
+    _players_meta = None
+    HEADSHOT_COL = None
+
+
 @app.get("/")
 def root():
     return {"status": "ok", "message": "NFL API running"}
@@ -220,7 +244,7 @@ def get_team(team: str):
         "by_player": by_player,
     }
 
-
+ 
 
 @app.get("/schedules")
 def get_schedules(
@@ -338,7 +362,19 @@ def get_leaders(limit: int = 10, position: Optional[str] = None):
             if key in r and r[key] is not None:
                 r[key] = round(r[key], 2)
 
+    if _players_meta is not None and HEADSHOT_COL is not None:
+        for r in result:
+            pid = r.get("player_id")
+            if pid and pid in _players_meta.index:
+                meta_row = _players_meta.loc[pid]
+                r["headshot_url"] = (
+                    meta_row.get(HEADSHOT_COL)
+                    if hasattr(meta_row, "get")
+                    else dict(meta_row).get(HEADSHOT_COL)
+                )
+
     return result
+
 
 
 @app.get("/players")
@@ -388,7 +424,21 @@ def search_players(
     rows = cur.fetchall()
     conn.close()
 
-    return [dict(r) for r in rows]
+    result = [dict(r) for r in rows]
+
+    if _players_meta is not None and HEADSHOT_COL is not None:
+        for r in result:
+            pid = r.get("player_id")
+            if pid and pid in _players_meta.index:
+                meta_row = _players_meta.loc[pid]
+                r["headshot_url"] = (
+                    meta_row.get(HEADSHOT_COL)
+                    if hasattr(meta_row, "get")
+                    else dict(meta_row).get(HEADSHOT_COL)
+                )
+
+    return result
+
 
 
 @app.get("/players/{player_id}")
@@ -418,7 +468,20 @@ def get_player(player_id: str):
     if not row:
         raise HTTPException(status_code=404, detail="Player not found")
 
-    return dict(row)
+    data = dict(row)
+
+    if _players_meta is not None and HEADSHOT_COL is not None:
+        pid = data.get("player_id")
+        if pid and pid in _players_meta.index:
+            meta_row = _players_meta.loc[pid]
+            data["headshot_url"] = (
+                meta_row.get(HEADSHOT_COL)
+                if hasattr(meta_row, "get")
+                else dict(meta_row).get(HEADSHOT_COL)
+            )
+
+    return data
+
 
 
 @app.get("/players/{player_id}/games")
