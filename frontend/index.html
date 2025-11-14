@@ -1,61 +1,89 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NFL Stats</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFL Stats & Predictions</title>
   <link href="./style.css" rel="stylesheet">
 </head>
 <body>
+ 
+  <nav>
+    <div class="nav-left">
+      <img src="https://cdn.freebiesupply.com/logos/large/2x/nfl-logo.png" alt="NFL Logo" class="logo">
+      <h3>NFL Stats Hub</h3>
+    </div>
+    <div class="links">
+      <a href="#players">Players</a>
+      <a href="#teams">Teams</a>
+      <a href="#predictions">Predictions</a>
+    </div>
+  </nav>
 
-  <header class="topbar" aria-hidden="false">
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
-      <a href="#home">Home</a>
-      <a href="#gallery">Predictions</a>
-      <a href="./teams.html">Teams</a>
-    </nav>
-  </header>
+ 
+  <section class="hero">
+    <h1>Track Performance. Forecast Greatness.</h1>
+    <p>All the stats you need.</p>
+    <div class="football"></div>
+  </section>
 
-  <section id="home" class="hero" aria-labelledby="hero-heading">
-    <div class="hero-inner">
-      <h1 id="hero-heading">Track Performance. Forecast Greatness.</h1>
-      <p>Stay ahead of the game.</p>
+  <section class="section" id="leaders">
+    <h2>Weekly Stat Leaders</h2>
+    <div class="cards">
+      <div class="card">
+        <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4431452.png" alt="QB" />
+        <div class="stat-number" data-target="325">0</div>
+        <p>Passing Yards Leader</p>
+      </div>
+      <div class="card">
+        <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4429795.png" alt="RB" />
+        <div class="stat-number" data-target="142">0</div>
+        <p>Rushing Yards Leader</p>
+      </div>
+      <div class="card">
+        <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4361432.png&w=350&h=254" alt="WR" />
+        <div class="stat-number" data-target="119">0</div>
+        <p>Receiving Yards Leader</p>
+      </div>
+      <div class="card">
+        <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/3122132.png" alt="EDGE" />
+        <div class="stat-number" data-target="3">0</div>
+        <p>Sack Leader</p>
+      </div>
     </div>
   </section>
 
-  <main>
-    <section id="gallery" class="gallery-wrap" aria-labelledby="gallery-title">
-      <h2 id="gallery-title" class="section-title">Generations Of Football</h2>
+  <section class="section" id="trends">
+    <h2>Trending Teams</h2>
+    <div class="cards">
+      <div class="card">Hottest Offense</div>
+      <div class="card">Top Defense</div>
+      <div class="card">Biggest Riser</div>
+    </div>
+  </section>
 
-      <div class="masonry" id="masonry">
-        <article class="masonry-item stagger-1"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/sx0vmllfr8rbxcxc7pbo" alt="Image 1" loading="lazy"></article>
-        <article class="masonry-item stagger-2"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/ojztyqeftncdztby9psz" alt="Image 2" loading="lazy"></article>
-        <article class="masonry-item stagger-3"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/gzceuggo7omej8t0puxv" alt="Image 3" loading="lazy"></article>
-        <article class="masonry-item stagger-4"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/ywfjgpxn4gllwahjz2f3" alt="Image 4" loading="lazy"></article>
-        <article class="masonry-item stagger-5"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/kd3jbbpvbhg2ffc3uk9j" alt="Image 5" loading="lazy"></article>
-        <article class="masonry-item stagger-1"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/psmgtrj3hbszy351bznu" alt="Image 6" loading="lazy"></article>
-        <article class="masonry-item stagger-2"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/v1567199108/nfl100/isdxhfggisqect4qom1o" alt="Image 7" loading="lazy"></article>
-        <article class="masonry-item stagger-3"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/chig3hwfultt2pqiv1t8" alt="Image 8" loading="lazy"></article>
-        <article class="masonry-item stagger-4"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/gy4e48h09zvhfdwgv9ub" alt="Image 9" loading="lazy"></article>
-        <article class="masonry-item stagger-5"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/hizgqtjdganpyk8pekyc" alt="Image 10" loading="lazy"></article>
-        <article class="masonry-item stagger-5"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/zilz0k6n5owigbbrpr95" alt="Image 11" loading="lazy"></article>
-        <article class="masonry-item stagger-5"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/vgpzgoch8mifect2nbhr" alt="Image 12" loading="lazy"></article>
-        <article class="masonry-item stagger-5"><img src="https://static.clubs.nfl.com/image/private/w_300,c_scale/f_auto/nfl100/qhon0jptm9eb4vgpiiai" alt="Image 13" loading="lazy"></article>
-      </div>
-    </section>
+  <section class="section" id="predictions">
+    <h2>Season Predictions</h2>
+    <div class="cards">
+      <div class="card">Breakout Player Projection</div>
+      <div class="card">Team Momentum Forecast</div>
+      <div class="card">Matchup of the Week Prediction</div>
+    </div>
+  </section>
 
-    <footer>
-      <small>Built by Grant Messer and Jacob Andrist</small>
-    </footer>
-  </main>
+  <section class="section" id="rankings">
+    <h2>Power Rankings Preview</h2>
+    <div class="cards">
+      <div class="card">Rank 1</div>
+      <div class="card">Rank 2</div>
+      <div class="card">Rank 3</div>
+      <div class="card">Rank 4</div>
+      <div class="card">Rank 5</div>
+    </div>
+  </section>
 
-  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-hidden="true">
-    <button class="close-btn" aria-label="Close (Esc)">✕</button>
-    <img src="" alt="">
-  </div>
-
-<script src="./index.js"></script>
-
+  <script src="./index.js"></script>
 </body>
 </html>
+
 
