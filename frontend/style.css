@@ -39,7 +39,7 @@ nav a {
   font-weight: bold;
 }
 
-.logo {
+.Nav-logo {
   width: 40px;
   height: auto;
 }
@@ -120,4 +120,9 @@ nav {
   position: sticky;
   top: 0;
   z-index: 20;
+}
+
+.Team-Logo {
+  height: auto;
+  width: 15px;
 }
