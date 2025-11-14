@@ -244,7 +244,48 @@ def get_team(team: str):
         "by_player": by_player,
     }
 
- 
+@app.get("/rosters/")
+def get_team_roster(
+    season: int = 2025,
+    team: Optional[str] = None):
+    try:
+        df = nfl.load_rosters([season])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load rosters")
+    
+    players = df.to_dicts()
+
+    if team:
+        t = team.upper()
+        players = [p for p in players if p.get("team") == t]
+    
+    wanted_keys = [
+        "season",
+        "team",
+        "full_name",
+        "position",
+        "jersey_number",
+        "depth_chart_position",
+        "status",
+        "gsis_id",
+        "pfr_id",
+        "espn_id"
+    ]
+
+    cleaned = [
+        {k: p.get(k) for k in wanted_keys}
+        for p in players
+    ]
+    cleaned.sort(
+        key=lambda p: (
+        str(p.get("team") or ""),
+        str(p.get("position") or ""),
+        p.get("jersey_number") or 0,
+        )
+    )
+
+    return cleaned
+
 
 @app.get("/schedules")
 def get_schedules(
