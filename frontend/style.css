@@ -139,10 +139,6 @@ nav {
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-.rankings-logo {
-  align-items: center;
-}
-
 .rankings-card h4 {
   color: var(--primary);
   font-size: 1.2rem;
@@ -153,13 +149,8 @@ margin-bottom: 10px;
 color: var(--primary);
 }
 
-.Team-Logo {
-  width: 60px;
-  height: auto;
-} 
-
 .rankings-card img {
-  width: 70px;
+  width: 60px;
   height: auto;
   margin-bottom: 10px;
 }
@@ -198,4 +189,28 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+}
+
+.team {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+
+.team img {
+  width: 60px;
+  height: auto;
+  margin-right: 10px;
+}
+
+.division {
+  
+}
+
+.division hr {
+  border: none; 
+  height: 1px; 
+  width: 50%;
+  background-color: #6a6a6a; 
+  margin: 20px 0; 
 }
