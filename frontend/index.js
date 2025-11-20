@@ -24,3 +24,25 @@ const counters = document.querySelectorAll('.stat-number');
     }, { threshold: 0.3 });
 
     observer.observe(document.querySelector('#leaders'));
+
+
+const BASE_URL = "http://167.172.117.166:8000";
+
+// --- SIMPLE TEST FETCH ---
+async function testConnection() {
+    try {
+        const res = await fetch(`${BASE_URL}/leaders?limit=1`);
+        const data = await res.json();
+        console.log("Backend Connected!", data);
+        
+        // Display on page:
+        const h2 = document.createElement("h2");
+        h2.style.color = "lime";
+        h2.textContent = "Backend Connected ✔";
+        document.body.prepend(h2);
+    } catch (err) {
+        console.log("Backend FAILED ❌", err);
+    }
+}
+
+testConnection();
