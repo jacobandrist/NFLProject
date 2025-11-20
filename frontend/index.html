@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NFL Stats & Predictions</title>
   <link href="./style.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@200..300" rel="stylesheet" />
 </head>
 <body>
  
@@ -14,9 +15,10 @@
       <h3>NFL Stats Hub</h3>
     </div>
     <div class="links">
-      <a href="#players">Players</a>
-      <a href="#teams">Teams</a>
+      <a href="./index.html">Home</a>
+      <a href="./teams.html">Teams</a>
       <a href="#predictions">Predictions</a>
+      <button title="Menu" id="trigram" class="material-symbols-outlined more">menu</button>
     </div>
   </nav>
 
@@ -33,22 +35,26 @@
       <div class="card">
         <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4431452.png" alt="QB" />
         <div class="stat-number" data-target="325">0</div>
-        <p>Passing Yards Leader</p>
+        <h4>Passing Yards Leader:</h4>
+        <p>Drake Maye</p>
       </div>
       <div class="card">
         <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4429795.png" alt="RB" />
         <div class="stat-number" data-target="142">0</div>
-        <p>Rushing Yards Leader</p>
+        <h4>Rushing Yards Leader:</h4>
+        <p>Jahmyir Gibbs</p>
       </div>
       <div class="card">
         <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/4361432.png&w=350&h=254" alt="WR" />
         <div class="stat-number" data-target="119">0</div>
-        <p>Receiving Yards Leader</p>
+        <h4>Receiving Yards Leader:</h4>
+        <p>Romeo Doubs</p>
       </div>
       <div class="card">
-        <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/3122132.png" alt="EDGE" />
-        <div class="stat-number" data-target="3">0</div>
-        <p>Sack Leader</p>
+        <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/3122132.png" alt="RB" />
+        <div class="stat-number" data-target="15">0</div>
+        <h4>Sacks Leader:</h4>
+        <p>Myles Garrett</p>
       </div>
     </div>
   </section>
@@ -63,7 +69,7 @@
   </section>
 
   <section class="section" id="predictions">
-    <h2>Season Predictions</h2>
+    <h2>Predictions Preview</h2>
     <div class="cards">
       <div class="card">Breakout Player Projection</div>
       <div class="card">Team Momentum Forecast</div>
@@ -73,17 +79,29 @@
 
   <section class="section" id="rankings">
     <h2>Power Rankings Preview</h2>
-    <div class="cards">
-      <div class="card">
-        <img src="https://upload.wikimedia.org/wikipedia/en/8/8a/Los_Angeles_Rams_logo.svg" alt="Rams Logo" class="Team-Logo">
-        <h4> Rank 1</h4>
+    <div class="cards rankings-grid">
+      <div class="rankings-card">
+        <h4>1. Los Angeles Rams</h4>
+        <img src="https://upload.wikimedia.org/wikipedia/en/8/8a/Los_Angeles_Rams_logo.svg" class="Team-Logo">
       </div>
-      <div class="card">Rank 2</div>
-      <div class="card">Rank 3</div>
-      <div class="card">Rank 4</div>
-      <div class="card">Rank 5</div>
+      <div class="rankings-card">
+        <h4>2. Philidalpheia Eagles</h4>
+        <img src="https://upload.wikimedia.org/wikipedia/en/8/8e/Philadelphia_Eagles_logo.svg" class="Team-Logo">
+      </div>
+      <div class="rankings-card">
+        <h4>3. New England Patriots</h4>
+        <img src="https://upload.wikimedia.org/wikipedia/sco/thumb/b/b9/New_England_Patriots_logo.svg/2560px-New_England_Patriots_logo.svg.png" class="Team-Logo">
+      </div>
+      <div class="rankings-card">
+        <h4>4. Detroit Lions</h4>
+        <img src="https://upload.wikimedia.org/wikipedia/en/7/71/Detroit_Lions_logo.svg" class="Team-Logo">
+      </div>
+      <div class="rankings-card">
+        <h4>5. Buffalo Bills</h4>
+        <img src="https://upload.wikimedia.org/wikipedia/en/7/77/Buffalo_Bills_logo.svg" class="Team-Logo">
+      </div>
     </div>
-  </section>
+</section>
 
   <script src="./index.js"></script>
 </body>

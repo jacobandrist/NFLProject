@@ -3,171 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NFL Stats</title>
+  <title>NFL Stats & Predictions</title>
   <link href="./style.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@200..300" rel="stylesheet" />
 </head>
 <body>
 
-  <header class="topbar" aria-hidden="false">
-    <nav class="navbar" role="navigation" aria-label="Main navigation">
-      <a href="./index.html">Home</a>
-      <a href="#gallery">Predictions</a>
-      <a href="./teams.html">Teams</a>
+    <nav>
+        <div class="nav-left">
+            <img src="https://cdn.freebiesupply.com/logos/large/2x/nfl-logo.png" alt="NFL Logo" class="Nav-logo">
+            <h3>NFL Stats Hub</h3>
+        </div>
+        <div class="links">
+            <a href="./index.html">Home</a>
+            <a href="./teams.html">Teams</a>
+            <a href="#predictions">Predictions</a>
+            <button title="Menu" id="trigram" class="material-symbols-outlined more">menu</button>
+        </div>
     </nav>
-  </header>
 
-  <main>
-    <div class="card">
-        <h1 class="card-title">NFC</h1>
-        <div class="NFC">
-            <div class="division">
-                <h5>NFC North</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Chicago Bears</h5>
-                </div>
-                <div class="team">
-                    <h5>Detriot Lions</h5>
-                </div>
-                <div class="team">
-                    <h5>Green Bay Packers</h5>
-                </div>
-                <div class="team">
-                    <h5>Minnesota Vikings</h5>
-                </div>
-            </div>
-            <div class="division">
-                <h5>NFC East</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Dallas Cowboys</h5>
-                </div>
-                <div class="team">
-                    <h5>New York Giants</h5>
-                </div>
-                <div class="team">
-                    <h5>Philadelphia Eagles</h5>
-                </div>
-                <div class="team">
-                    <h5>Washington Commanders</h5>
-                </div>
-            </div>
-            <div class="division">
-                <h5>NFC South</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Atlanta Falcons</h5>
-                </div>
-                <div class="team">
-                    <h5>Carolina Panthers</h5>
-                </div>
-                <div class="team">
-                    <h5>New Orleans Saints</h5>
-                </div>
-                <div class="team">
-                    <h5>Tampa Bay Buccaneers</h5>
-                </div>
-            </div>
-            <div class="division">
-                <h5>NFC West</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Arizona Cardinals</h5>
-                </div>
-                <div class="team">
-                    <h5>Los Angeles Rams</h5>
-                </div>
-                <div class="team">
-                    <h5>San Francisco 49ers</h5>
-                </div>
-                <div class="team">
-                    <h5>Seattle Seahawks</h5>
-                </div>
-            </div>
-        </div>
-        <h1 class="card-title">AFC</h1>
-        <div class="AFC">
-            <div class="division">
-                <h5>AFC North</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Baltimore Ravens</h5>
-                </div>
-                <div class="team">
-                    <h5>Cincinnati Bengals</h5>
-                </div>
-                <div class="team">
-                    <h5>Cleveland Browns</h5>
-                </div>
-                <div class="team">
-                    <h5>Pittsburgh Steelers</h5>
-                </div>
-            </div>
-            <div class="division">
-                <h5>AFC East</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Buffalo Bills</h5>
-                </div>
-                <div class="team">
-                    <h5>Miami Dolphins</h5>
-                </div>
-                <div class="team">
-                    <h5>New England Patriots</h5>
-                </div>
-                <div class="team">
-                    <h5>New York Jets</h5>
-                </div>
-            </div>
-            <div class="division">
-                <h5>AFC South</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Houston Texans</h5>
-                </div>
-                <div class="team">
-                    <h5>Indianapolis Colts</h5>
-                </div>
-                <div class="team">
-                    <h5>Jacksonville Jaguars</h5>
-                </div>
-                <div class="team">
-                    <h5>Tennessee Titans</h5>
-                </div>
-            </div>
-            <div class="division">
-                <h5>AFC West</h5>
-                <div class="line"></div>
-                <div class="team">
-                    <h5>Denver Broncos</h5>
-                </div>
-                <div class="team">
-                    <h5>Kansas City Chiefs</h5>
-                </div>
-                <div class="team">
-                    <h5>Las Vegas Raiders</h5>
-                </div>
-                <div>Los Angeles Chargers</div>
-            </div>
-        </div>
-    </div>
+    <main>
+        <section class="All-Teams">
+            <h2>NFL Teams</h2>
+        </section>
+    </main>
 
-    <div class="card">
-        <h1 class="card-title">Power Rankings</h1>
-    </div>
-
-    <footer>
-      <small>Built by Grant Messer and Jacob Andrist</small>
-    </footer>
-
-  </main>
-
-  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-hidden="true">
-    <button class="close-btn" aria-label="Close (Esc)">✕</button>
-    <img src="" alt="">
-  </div>
-
-<script src="./index.js"></script>
-
+  <script src="./index.js"></script>
 </body>
 </html>
