@@ -1,0 +1,576 @@
+from fastapi import FastAPI, HTTPException
+from typing import Optional
+import sqlite3
+from fastapi.middleware.cors import CORSMiddleware
+import nflreadpy as nfl
+import pandas as pd
+
+
+DB_PATH = "nfl.db"
+
+app = FastAPI(title="NFL Last 5 Games API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def get_table_columns(table_name: str):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(f"PRAGMA table_info({table_name})")
+    cols = [row[1] for row in cur.fetchall()]
+    conn.close()
+    return cols
+
+
+PLAYERS_COLS = get_table_columns("players")
+WEEKLY_COLS = get_table_columns("weekly_stats")
+
+TEAM_COL_PLAYERS = (
+    "recent_team"
+    if "recent_team" in PLAYERS_COLS
+    else ("team" if "team" in PLAYERS_COLS else None)
+)
+TEAM_COL_WEEKLY = (
+    "recent_team"
+    if "recent_team" in WEEKLY_COLS
+    else ("team" if "team" in WEEKLY_COLS else None)
+)
+
+try:
+    teams_polars = nfl.load_teams()
+    teams_df = teams_polars.to_pandas()
+
+    if "team_abbr" in teams_df.columns:
+        _teams_meta = teams_df.set_index("team_abbr")
+    elif "team" in teams_df.columns:
+        _teams_meta = teams_df.set_index("team")
+    else:
+        print("load_teams() is missing team_abbr/team columns")
+        _teams_meta = None
+
+except Exception as e:
+    print(f"Error loading team metadata from nflreadpy: {e}")
+    _teams_meta = None
+
+try:
+    players_polars = nfl.load_players()
+    players_df = players_polars.to_pandas()
+
+    if "gsis_id" in players_df.columns:
+        _players_meta = players_df.set_index("gsis_id")
+    elif "player_id" in players_df.columns:
+        _players_meta = players_df.set_index("player_id")
+    else:
+        _players_meta = None
+
+    if "headshot" in players_df.columns:
+        HEADSHOT_COL = "headshot"
+    elif "headshot_url" in players_df.columns:
+        HEADSHOT_COL = "headshot_url"
+    else:
+        HEADSHOT_COL = None
+
+except Exception as e:
+    print(f"Error loading player metadata from nflreadpy: {e}")
+    _players_meta = None
+    HEADSHOT_COL = None
+
+
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "NFL API running"}
+
+
+@app.get("/team/{team}")
+def get_team(team: str):
+    conn = get_db()
+    cur = conn.cursor()
+
+    SEASON = 2025
+
+    if not TEAM_COL_WEEKLY:
+        conn.close()
+        raise HTTPException(
+            status_code=500,
+            detail="Team column not available in weekly_stats",
+        )
+
+    team_col = f"ws.{TEAM_COL_WEEKLY}"
+    team = team.upper()
+
+    team_name = None
+    team_colors = None
+    team_logo = None
+
+    if _teams_meta is not None and team in _teams_meta.index:
+        meta_row = _teams_meta.loc[team]
+        meta = meta_row.to_dict() if hasattr(meta_row, "to_dict") else dict(meta_row)
+
+        team_name = (
+            meta.get("team_name")
+            or meta.get("name")
+            or meta.get("full_name")
+            or meta.get("nickname")
+        )
+
+        team_colors = {
+            "primary": meta.get("team_color") or meta.get("color_primary"),
+            "secondary": meta.get("team_color2") or meta.get("color_secondary"),
+        }
+
+        team_logo = (
+            meta.get("team_logo_espn")
+            or meta.get("team_logo")
+            or meta.get("team_logo_nfl")
+        )
+
+    base_stats = [
+        "passing_yards",
+        "rushing_yards",
+        "receiving_yards",
+        "passing_tds",
+        "rushing_tds",
+        "receiving_tds",
+        "fantasy_points_ppr",
+    ]
+    stat_cols = [c for c in base_stats if c in WEEKLY_COLS]
+
+    if not stat_cols:
+        conn.close()
+        raise HTTPException(
+            status_code=500,
+            detail="No stat columns available in weekly_stats",
+        )
+
+    team_select_parts = [f"SUM(ws.{c}) AS {c}" for c in stat_cols]
+    team_select_clause = ",\n          ".join(team_select_parts)
+
+    sql_team = f"""
+        SELECT
+            {team_select_clause}
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+            AND {team_col} = ?
+    """
+
+    cur.execute(sql_team, (SEASON, team))
+    team_row = cur.fetchone()
+
+    if not team_row or all(v is None for v in team_row):
+        conn.close()
+        raise HTTPException(
+            status_code=404,
+            detail=f"No data found for team {team} in {SEASON}",
+        )
+
+    team_totals = {k: team_row[idx] for idx, k in enumerate(stat_cols)}
+
+    pos_select_parts = ["p.position", "COUNT(DISTINCT ws.player_id) AS players"]
+    pos_select_parts.extend([f"SUM(ws.{c}) AS {c}" for c in stat_cols])
+    pos_select_clause = ",\n            ".join(pos_select_parts)
+
+    sql_pos = f"""
+        SELECT
+            {pos_select_clause}
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+          AND {team_col} = ?
+        GROUP BY p.position
+        ORDER BY p.position
+    """
+
+    cur.execute(sql_pos, (SEASON, team))
+    pos_rows = cur.fetchall()
+    by_position = [dict(row) for row in pos_rows]
+
+    plyr_select_parts = [
+        "ws.player_id",
+        "p.player_name AS player_name",
+        "p.position",
+    ]
+    plyr_select_parts.extend([f"SUM(ws.{c}) AS {c}" for c in stat_cols])
+    plyr_select_clause = ",\n            ".join(plyr_select_parts)
+
+    sql_player = f"""
+        SELECT
+            {plyr_select_clause}
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+          AND {team_col} = ?
+        GROUP BY ws.player_id, p.player_name, p.position
+        ORDER BY fantasy_points_ppr DESC
+    """
+
+    cur.execute(sql_player, (SEASON, team))
+    plyr_rows = cur.fetchall()
+    by_player = [dict(r) for r in plyr_rows]
+
+    conn.close()
+
+    for d in [team_totals, *by_position, *by_player]:
+        if "fantasy_points_ppr" in d and d["fantasy_points_ppr"] is not None:
+            d["fantasy_points_ppr"] = round(d["fantasy_points_ppr"], 2)
+
+    return {
+        "team": team,
+        "season": SEASON,
+        "team_name": team_name,
+        "team_colors": team_colors,
+        "team_logo": team_logo,
+        "team_totals": team_totals,
+        "by_position": by_position,
+        "by_player": by_player,
+    }
+
+@app.get("/rosters")
+def get_team_roster(
+    season: int = 2025,
+    team: Optional[str] = None):
+    try:
+        df = nfl.load_rosters([season])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load rosters")
+    
+    players = df.to_dicts()
+
+    if team:
+        t = team.upper()
+        players = [p for p in players if p.get("team") == t]
+    
+    wanted_keys = [
+        "season",
+        "team",
+        "full_name",
+        "position",
+        "jersey_number",
+        "depth_chart_position",
+        "status",
+        "gsis_id",
+        "pfr_id",
+        "espn_id"
+    ]
+
+    cleaned = [
+        {k: p.get(k) for k in wanted_keys}
+        for p in players
+    ]
+    cleaned.sort(
+        key=lambda p: (
+        str(p.get("team") or ""),
+        str(p.get("position") or ""),
+        p.get("jersey_number") or 0,
+        )
+    )
+
+    return cleaned
+
+
+@app.get("/schedules")
+def get_schedules(
+    season: int = 2025,
+    team: Optional[str] = None,
+    week: Optional[int] = None,
+    game_type: Optional[str] = None,
+):
+    
+    try:
+        sched_df = nfl.load_schedules([season])
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to load schedules for season {season}: {e}",
+        )
+
+    games = sched_df.to_dicts()
+
+    if team:
+        t = team.upper()
+        games = [
+            g for g in games
+            if g.get("home_team") == t or g.get("away_team") == t
+        ]
+
+    if week is not None:
+        games = [g for g in games if g.get("week") == week]
+
+    if game_type:
+        gt = game_type.upper()
+        games = [
+            g for g in games
+            if (g.get("game_type") or "").upper() == gt
+        ]
+
+    wanted_keys = [
+        "game_id",
+        "season",
+        "week",
+        "game_type",
+        "gameday",
+        "weekday",
+        "gametime",
+        "home_team",
+        "home_score",
+        "away_team",
+        "away_score",
+        "location",
+    ]
+
+    trimmed = [
+        {k: g.get(k) for k in wanted_keys}
+        for g in games
+    ]
+
+    trimmed.sort(
+        key=lambda g: (g.get("week") or 0, str(g.get("gametime") or ""))
+    )
+
+    return trimmed
+
+@app.get("/leaders")
+def get_leaders(limit: int = 10, position: Optional[str] = None):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    SEASON = 2025
+
+    if TEAM_COL_WEEKLY:
+        team_expr = f"ws.{TEAM_COL_WEEKLY}"
+    else:
+        team_expr = "NULL"
+
+    sql = f"""
+        SELECT
+            ws.player_id,
+            p.player_name AS player_name,
+            {team_expr} AS team,
+            p.position,
+            COUNT(*) AS games_played,
+            SUM(ws.fantasy_points_ppr) AS total_fantasy_points_ppr,
+            AVG(ws.fantasy_points_ppr) AS avg_fantasy_points_ppr
+        FROM weekly_stats AS ws
+        LEFT JOIN players AS p
+            ON ws.player_id = p.player_id
+        WHERE ws.season = ?
+    """
+
+    params = [SEASON]
+
+    if position:
+        sql += " AND p.position = ?"
+        params.append(position.upper())
+
+    sql += f"""
+        GROUP BY
+            ws.player_id,
+            p.player_name,
+            {team_expr},
+            p.position
+        ORDER BY total_fantasy_points_ppr DESC
+        LIMIT ?
+    """
+    params.append(limit)
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+
+    result = [dict(r) for r in rows]
+    for r in result:
+        for key in ("total_fantasy_points_ppr", "avg_fantasy_points_ppr"):
+            if key in r and r[key] is not None:
+                r[key] = round(r[key], 2)
+
+    if _players_meta is not None and HEADSHOT_COL is not None:
+        for r in result:
+            pid = r.get("player_id")
+            if pid and pid in _players_meta.index:
+                meta_row = _players_meta.loc[pid]
+                r["headshot_url"] = (
+                    meta_row.get(HEADSHOT_COL)
+                    if hasattr(meta_row, "get")
+                    else dict(meta_row).get(HEADSHOT_COL)
+                )
+
+    return result
+
+
+
+@app.get("/players")
+def search_players(
+    q: Optional[str] = None,
+    team: Optional[str] = None,
+    position: Optional[str] = None,
+    limit: int = 50,
+):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    if TEAM_COL_PLAYERS:
+        select_team = f"{TEAM_COL_PLAYERS} AS team"
+    else:
+        select_team = "NULL AS team"
+
+    sql = f"""
+        SELECT
+            player_id,
+            player_name,
+            {select_team},
+            position
+        FROM players
+        WHERE 1=1
+    """
+    params = []
+
+    if q:
+        sql += " AND player_name LIKE ?"
+        params.append(f"%{q}%")
+
+    if position:
+        if "position" in PLAYERS_COLS:
+            sql += " AND position = ?"
+            params.append(position.upper())
+
+    if team and TEAM_COL_PLAYERS:
+        sql += f" AND {TEAM_COL_PLAYERS} = ?"
+        params.append(team.upper())
+
+    sql += " ORDER BY player_name LIMIT ?"
+    params.append(limit)
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+
+    result = [dict(r) for r in rows]
+
+    if _players_meta is not None and HEADSHOT_COL is not None:
+        for r in result:
+            pid = r.get("player_id")
+            if pid and pid in _players_meta.index:
+                meta_row = _players_meta.loc[pid]
+                r["headshot_url"] = (
+                    meta_row.get(HEADSHOT_COL)
+                    if hasattr(meta_row, "get")
+                    else dict(meta_row).get(HEADSHOT_COL)
+                )
+
+    return result
+
+
+
+@app.get("/players/{player_id}")
+def get_player(player_id: str):
+    conn = get_db()
+    cur = conn.cursor()
+
+    if TEAM_COL_PLAYERS:
+        select_team = f"{TEAM_COL_PLAYERS} AS team"
+    else:
+        select_team = "NULL AS team"
+
+    sql = f"""
+        SELECT
+            player_id,
+            player_name,
+            {select_team},
+            position
+        FROM players
+        WHERE player_id = ?
+    """
+
+    cur.execute(sql, (player_id,))
+    row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    data = dict(row)
+
+    if _players_meta is not None and HEADSHOT_COL is not None:
+        pid = data.get("player_id")
+        if pid and pid in _players_meta.index:
+            meta_row = _players_meta.loc[pid]
+            data["headshot_url"] = (
+                meta_row.get(HEADSHOT_COL)
+                if hasattr(meta_row, "get")
+                else dict(meta_row).get(HEADSHOT_COL)
+            )
+
+    return data
+
+
+
+@app.get("/players/{player_id}/games")
+def get_last_games(player_id: str, limit: int = 5):
+    conn = get_db()
+    cur = conn.cursor()
+
+    if TEAM_COL_WEEKLY:
+        select_team = f"{TEAM_COL_WEEKLY} AS team"
+    else:
+        select_team = "NULL AS team"
+
+    stat_cols = []
+    if "passing_yards" in WEEKLY_COLS:
+        stat_cols.append("passing_yards")
+    if "rushing_yards" in WEEKLY_COLS:
+        stat_cols.append("rushing_yards")
+    if "receiving_yards" in WEEKLY_COLS:
+        stat_cols.append("receiving_yards")
+    if "passing_tds" in WEEKLY_COLS:
+        stat_cols.append("passing_tds")
+    if "rushing_tds" in WEEKLY_COLS:
+        stat_cols.append("rushing_tds")
+    if "receiving_tds" in WEEKLY_COLS:
+        stat_cols.append("receiving_tds")
+    if "fantasy_points_ppr" in WEEKLY_COLS:
+        stat_cols.append("fantasy_points_ppr")
+
+    select_parts = [
+        "season" if "season" in WEEKLY_COLS else "NULL AS season",
+        "week" if "week" in WEEKLY_COLS else "NULL AS week",
+        select_team,
+    ]
+    select_parts.extend(stat_cols)
+
+    select_clause = ", ".join(select_parts)
+
+    sql = f"""
+        SELECT
+            {select_clause}
+        FROM weekly_stats
+        WHERE player_id = ?
+        ORDER BY season DESC, week DESC
+        LIMIT ?
+    """
+
+    cur.execute(sql, (player_id, limit))
+    rows = cur.fetchall()
+    conn.close()
+
+    return [dict(r) for r in rows]
