@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 function Home() {
-  const observerRef = useRef(null)
-
   useEffect(() => {
     const counters = document.querySelectorAll('.stat-number')
     const speed = 100
