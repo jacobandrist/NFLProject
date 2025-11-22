@@ -66,6 +66,10 @@ jobs:
             # ---- Backend Deploy ----
             cd backend
             /root/opt/nfl-app/NFLProject/backend/venv/bin/pip install -r req.txt
+            
+            # Load data if needed (optional - comment out if you don't want to reload data on every deploy)
+            # /root/opt/nfl-app/NFLProject/backend/venv/bin/python load_data.py
+            
             sudo systemctl restart nfl-api
 
             # ---- Frontend Deploy ----
@@ -73,9 +77,14 @@ jobs:
             npm ci
             npm run build
 
+            # Create nginx directory if it doesn't exist
+            sudo mkdir -p /var/www/nfl-frontend
+
             # Copy frontend to nginx directory
             sudo rm -rf /var/www/nfl-frontend/*
             sudo cp -r dist/* /var/www/nfl-frontend/
 
             # Reload nginx to serve the new build
             sudo systemctl reload nginx
+
+            echo "Deployment completed successfully!"
