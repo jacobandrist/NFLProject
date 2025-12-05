@@ -104,6 +104,38 @@ def root():
     return {"status": "ok", "message": "NFL API running"}
 
 
+@app.get("/debug/teams")
+def debug_teams():
+    """Debug endpoint to see available team metadata"""
+    if not _teams_dict:
+        return {"error": "No teams data loaded"}
+    
+    # Get a sample team (DET for Detroit Lions)
+    sample = _teams_dict.get('DET', _teams_dict.get(list(_teams_dict.keys())[0]))
+    
+    return {
+        "teams_count": len(_teams_dict),
+        "available_teams": list(_teams_dict.keys()),
+        "sample_team_abbr": list(_teams_dict.keys())[0] if _teams_dict else None,
+        "sample_team_data": sample,
+        "all_column_names": list(sample.keys()) if sample else []
+    }
+
+@app.get("/debug/teams/{team}")
+def debug_specific_team(team: str):
+    """Debug a specific team's metadata"""
+    team = team.upper()
+    if team not in _teams_dict:
+        return {
+            "error": f"Team {team} not found",
+            "available_teams": list(_teams_dict.keys())
+        }
+    
+    return {
+        "team": team,
+        "raw_data": _teams_dict[team]
+    }
+
 @app.get("/team/{team}")
 def get_team(team: str):
     conn = get_db()
